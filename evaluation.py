@@ -1,3 +1,0 @@
-
-def evaluate(p):
-  pass
