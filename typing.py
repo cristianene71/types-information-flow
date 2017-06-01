@@ -60,8 +60,16 @@ def _compute_types_stm(gamma, p, s):
         res = gamma.copy()
         res[var] = _join(p, t)
     elif tag == 'WHILE':
-        print('TODO')
-        assert(False)
+        expr = s[1]
+        code = s[2]
+        gamma_pr = gamma 
+        gamma_old = None
+        while gamma_pr != gamma_old:
+            gamma_old = gamma_pr
+            t = _compute_expr_type(gamma_pr, expr)
+            gamma_sd = _compute_types_block(gamma_pr, _join(p, t), code) 
+            gamma_pr = _join_env(gamma_pr, gamma_sd)
+        res = gamma_pr
     elif tag == 'IF':
         t = _compute_expr_type(gamma, s[1])
         gamma1 = _compute_types_block(gamma, _join(p, t), s[2])
