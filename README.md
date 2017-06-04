@@ -30,10 +30,9 @@ We use the lattice of finite sets of variables extended with a 'top' element. Th
 
 ### Examples
 
-    > ./main.py tests/if_then.w 
-    --- parsing tests/if_then.w
+    > ./main.py tests/if_then2.w 
+    --- parsing tests/if_then2.w
     --- pretty print
-    x = 1;
     if ((x==1)) {
       y = 2;
     } else {
@@ -43,12 +42,11 @@ We use the lattice of finite sets of variables extended with a 'top' element. Th
     {'y', 'x'}
     --- typechecking
     initial environment: {'y': {'y'}, 'x': {'x'}}
-    final environment: {'y': {'y'}, 'x': set()}
+    final environment: {'y': {'y', 'x'}, 'x': {'x'}}
 
 ### TODO
 
 * enforce python coding guidelines
-* typecheck while 
 * add precedence/associativity rules in the grammar
 * expand this README 
 * add more tests
