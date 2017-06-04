@@ -1,4 +1,6 @@
-""" Compute the set of free variables of of a program. 
+""" Compute the set of free variables and output variables (returned variables) 
+    of a program. 
+    
     Simple recursive functions over the AST
 """
 
@@ -39,4 +41,11 @@ def _free_vars_block(b):
     return res
 
 def free_vars_prog(p):
-    return _free_vars_block(p)
+    assert(p[0] == 'PROG')
+    return _free_vars_block(p[1])
+
+def output_vars_prog(p):
+    assert(p[0] == 'PROG')
+    return set(p[2])
+
+

@@ -67,4 +67,5 @@ def typecheck(gamma, prog):
     Returns:
         dict: New type environment.
     """
-    return _compute_types_prog(gamma, lat_types.bottom, prog)
+    assert(prog[0] == 'PROG')
+    return _compute_types_prog(gamma, lat_types.bottom, prog[1])

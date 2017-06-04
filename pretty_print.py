@@ -40,4 +40,11 @@ def _block_to_string(b, indent):
     return res
 
 def print_prog(p):
-    sys.stdout.write(_block_to_string(p, ""))
+    assert(p[0] == 'PROG')
+    sys.stdout.write(_block_to_string(p[1], ""))
+    print('return ', ",".join(p[2]), ';', sep = "")
+
+
+
+
+

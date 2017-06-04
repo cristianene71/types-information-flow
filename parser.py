@@ -2,7 +2,12 @@
 
 Concrete syntax is given by the following grammar.
 
-    prog ::= block
+    prog ::= block opt_return
+    opt_return ::= epsilon
+               |   RETURN SCOL 
+               |   RETURN indents SCOL
+    idents :: IDENT
+           |  IDENT, idents
     block ::= stm block
     block ::= stm
     stm ::= IDENT AFFECT exp SCOL
@@ -18,7 +23,8 @@ Concrete syntax is given by the following grammar.
 
 Abstract syntax is defined as:
 
-PROG ::= ('PROG', BLOCK) 
+PROG ::= ('PROG', BLOCK, RETURNED_VARS) 
+RETURNED_VARS :: = [ IDENT, ..., IDENT ]
 BLOCK ::= [ STM, ..., STM ]
 STM ::= ('IF', EXP, BLOCK, BLOCK)
      |  ('WHILE', EXP, EXP)
@@ -34,11 +40,11 @@ BINOP ::= 'PLUS' | 'TIMES' | 'EQUAl'
 import struct
 import sys
 
-reserved = {'while':'WHILE', 'if':'IF', 'else':'ELSE', 
-            'skip' :'SKIP' } 
+reserved = {'while':'WHILE', 'if':'IF', 'else':'ELSE', 'skip' :'SKIP',
+            'return': 'RETURN' } 
 
 tokens = ['INT', 'EQUAL', 'PLUS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE',
-          'AFFECT', 'IDENT', 'COL', 'SCOL',  'TIMES'] + list(reserved.values())
+          'AFFECT', 'IDENT', 'COMMA', 'SCOL', 'TIMES'] + list(reserved.values())
 
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
@@ -49,7 +55,7 @@ t_TIMES = r'\*'
 t_AFFECT = r'='
 t_EQUAL = r'=='
 t_SCOL = r'\;'
-t_COL = r':'
+t_COMMA = r'\,'
 
 def t_INT(t):
     r'\d+'
@@ -81,8 +87,28 @@ precedence = (('right', 'WHILE'), ('right', 'IF'))
 names = {}
 
 def p_prog(p):
-    'prog : block'
-    p[0] = p[1]
+    'prog : block opt_return'
+    p[0] = ('PROG', p[1], p[2])
+
+def p_opt_return_empty(p):
+    'opt_return :'
+    p[0] = []
+
+def p_opt_return_void(p):
+    'opt_return : RETURN SCOL'
+    p[0] = []
+
+def p_opt_return_idents(p):
+    'opt_return : RETURN idents SCOL'
+    p[0] = p[2] 
+
+def p_idents_one(p):
+    'idents : IDENT'
+    p[0] = [p[1]]
+
+def p_idents_seq(p):
+    'idents : IDENT COMMA idents'
+    p[0] = [p[1]] + p[3]
 
 def p_block_seq(p):
     'block : stm block'

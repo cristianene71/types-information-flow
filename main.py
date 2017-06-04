@@ -40,14 +40,20 @@ def main():
     print("--- pretty print")
     pretty_print.print_prog(prog)
 
-    print("--- free variable")
+    print("--- free and output variable")
     fv = free_vars.free_vars_prog(prog)
-    print(fv)
+    ov = free_vars.output_vars_prog(prog)
+    print('free', fv)
+    print('output', ov)
 
     gamma = lat_types.create_init_env(fv)
-    print('initial environment:', gamma)
+    print('--- initial environment:')
+    print(gamma)
 
     print('--- typechecking (hunt-sand)')
+    if ov:
+        print('WARNING: output variables are ignored')
+
     new_gamma = typing.typecheck(gamma, prog)
     print('final environment:', new_gamma)
 
