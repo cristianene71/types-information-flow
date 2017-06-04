@@ -1,35 +1,8 @@
 """ Typechecking
     Follow the algorithmic rule of the paper
-    Types are elements of the lattice of finite sets of variables 
-    + a top element.
 """
 
-bottom = set() 
-top = None
-
-def _meet(x,y):
-    if x == top:
-        return y
-    if y == top:
-        return x
-    return x.intersection(y)  
-
-def _join(x,y):
-    if x == top or y == top:
-        return top
-    return x.union(y)
-
-def _join_env(gamma1, gamma2):
-    res = dict()
-    for x in gamma1:
-        if x in gamma2:
-          res[x] = _join(gamma1[x], gamma2[x])
-        else:
-          res[x] = gamma1[x]
-    for y in gamma2:
-        if not y in gamma1:
-          res[y] = gamma2[y]
-    return res
+import lat_types
 
 def _compute_expr_type(gamma, e):
     tag = e[0]
@@ -58,7 +31,7 @@ def _compute_types_stm(gamma, p, s):
         expr = s[2]
         t = _compute_expr_type(gamma, expr)
         res = gamma.copy()
-        res[var] = _join(p, t)
+        res[var] = lat_types.join(p, t)
     elif tag == 'WHILE':
         expr = s[1]
         code = s[2]
@@ -67,14 +40,14 @@ def _compute_types_stm(gamma, p, s):
         while gamma_pr != gamma_old:
             gamma_old = gamma_pr
             t = _compute_expr_type(gamma_pr, expr)
-            gamma_sd = _compute_types_block(gamma_pr, _join(p, t), code) 
-            gamma_pr = _join_env(gamma_pr, gamma_sd)
+            gamma_sd = _compute_types_block(gamma_pr, lat_types.join(p, t), code) 
+            gamma_pr = lat_types.join_env(gamma_pr, gamma_sd)
         res = gamma_pr
     elif tag == 'IF':
         t = _compute_expr_type(gamma, s[1])
-        gamma1 = _compute_types_block(gamma, _join(p, t), s[2])
-        gamma2 = _compute_types_block(gamma, _join(p, t), s[3])
-        res = _join_env(gamma1, gamma2)
+        gamma1 = _compute_types_block(gamma, lat_types.join(p, t), s[2])
+        gamma2 = _compute_types_block(gamma, lat_types.join(p, t), s[3])
+        res = lat_types.join_env(gamma1, gamma2)
     else:
         print("don't know tag", tag, s)
         assert(False)
@@ -93,4 +66,4 @@ def typecheck(gamma, prog):
     Returns:
         dict: New type environment.
     """
-    return _compute_types_prog(gamma, bottom, prog)
+    return _compute_types_prog(gamma, lat_types.bottom, prog)

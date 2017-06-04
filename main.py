@@ -13,6 +13,7 @@ import parser
 import typing
 import pretty_print
 import free_vars
+import lat_types
 
 def _usage():
     print('usage: ./main.py file')
@@ -43,17 +44,11 @@ def main():
     print(fv)
 
     print('--- typechecking')
-    # we build the initial typing environment
-    # Types are elements of the lattice of finie sets of variables
-    # (see typing.py)
-    # An environment is a dictionary that maps variable
-    # to their types
-    # Initial typing environnment maps each variable to the corresponding
-    # singleton.
-    # TODO(phil) define types in their own module
-    gamma = dict([(x,set([x])) for x in fv])
+    gamma = lat_types.create_init_env(fv)
+
     print('initial environment:', gamma)
     new_gamma = typing.typecheck(gamma, prog)
+
     print('final environment:', new_gamma)
 
 if __name__ == "__main__":
