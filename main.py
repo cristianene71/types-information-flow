@@ -11,6 +11,7 @@ import os
 import sys
 import parser
 import typing
+import typing_os
 import pretty_print
 import free_vars
 import lat_types
@@ -43,12 +44,15 @@ def main():
     fv = free_vars.free_vars_prog(prog)
     print(fv)
 
-    print('--- typechecking')
     gamma = lat_types.create_init_env(fv)
-
     print('initial environment:', gamma)
-    new_gamma = typing.typecheck(gamma, prog)
 
+    print('--- typechecking (hunt-sand)')
+    new_gamma = typing.typecheck(gamma, prog)
+    print('final environment:', new_gamma)
+
+    print('--- typechecking (output-sensitive)')
+    new_gamma = typing_os.typecheck(gamma, prog)
     print('final environment:', new_gamma)
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 """ Typechecking
-
-Straigthforward implementation of the algorithmic rules of Flow-Sensitive
-Security Types" """
+    Follow the algorithmic rule of the paper
+"""
 
 import lat_types
 
