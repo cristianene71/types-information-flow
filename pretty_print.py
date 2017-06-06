@@ -19,7 +19,7 @@ def _exp_to_string(e):
 
 def _stm_to_string(p, indent):
     tag = p[0]
-    if tag == 'AFFECT':
+    if tag == 'ASSIGN':
         res = indent + p[1] + ' = ' + _exp_to_string(p[2]) + ';'
     elif tag == 'WHILE':
         res = indent + 'while (' + _exp_to_string(p[1])  + ') {\n' + _block_to_string(p[2], indent + '  ') + indent + '}'

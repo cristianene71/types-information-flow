@@ -46,20 +46,30 @@ def main():
     print('free', fv)
     print('output', ov)
 
-    gamma = lat_types.create_init_env(fv)
-    print('--- initial environment:')
-    print(gamma)
+    gamma = lat_types.create_singleton_env(fv)
 
     print('--- typechecking (hunt-sand)')
     if ov:
         print('WARNING: output variables are ignored')
+    print('* initial environment:', gamma)
 
     new_gamma = typing.typecheck(gamma, prog)
-    print('final environment:', new_gamma)
+    print('* final environment:', new_gamma)
 
     print('--- typechecking (output-sensitive)')
-    new_gamma = typing_os.typecheck(gamma, prog)
-    print('final environment:', new_gamma)
+    gamma = lat_types.create_singleton_env(fv)
+    gamma.update(lat_types.create_complement_env(ov))
+    alpha = lat_types.create_singleton_env(ov)
+    print('* initial gamma', gamma) 
+    print('* initial alpha', alpha) 
+    V = set()
+    Z = set()
+    Xo = ov
+    gamma, alpha, V, Z  = typing_os.typecheck(gamma, alpha, V, Z, Xo, prog)
+    print('* final gamma:', gamma);
+    print('* final alpha:', alpha);
+    print('* final V:', V);
+    print('* final Z:', Z);
 
 if __name__ == "__main__":
     main()

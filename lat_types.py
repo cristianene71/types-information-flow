@@ -14,14 +14,42 @@ The parser/AST may need be extended to allow the user to declare custom types.
 bottom = set() 
 top = None
 
+def leq(x,y):
+    return x.issubset(y)
+
+def compl(v):
+    """ returns a `complement` variable to be used by the typesystem
+        to identify dependency with output variables
+    """
+    assert(v[0] != '_')
+    return '_' + v
+
+def is_compl(v):
+    assert(len(v) == 1)
+    for x in v:
+        return x[0] == '_'
+
+def subst(ty, x, y):
+    assert(is_compl(x))
+    res = ty
+    if leq(x, ty): 
+        res = ty.difference(x).union(y)
+    return res
+
 def type_from_var(v):
     return set([v])
 
-def create_init_env(fv):
+def create_singleton_env(fv):
     """ Initial typing environnment maps each variable to the corresponding
     singleton.
     """ 
     return dict([(x, type_from_var(x)) for x in fv])
+
+def create_complement_env(fv):
+     """ Initial typing environnment maps each variable to the corresponding
+     'complement' singleton.
+     """ 
+     return dict([(x, type_from_var(compl(x))) for x in fv])
 
 def meet(x,y):
     if x == top:
@@ -34,6 +62,12 @@ def join(x,y):
     if x == top or y == top:
         return top
     return x.union(y)
+
+def join_list(l):
+    res = set()
+    for x in l:
+        res = res.union(x)
+    return res
 
 def join_env(gamma1, gamma2):
     res = dict()
