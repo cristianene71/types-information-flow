@@ -30,6 +30,8 @@ def is_compl(v):
         return x[0] == '_'
 
 def subst(ty, x, y):
+    """ substitutes variable x in type t with variables in y.
+        x has to be a `complement` variable  """
     assert(is_compl(x))
     res = ty
     if leq(x, ty): 
@@ -37,7 +39,8 @@ def subst(ty, x, y):
     return res
 
 def type_from_var(v):
-    return set([v])
+    """ returns the singleton containing v """
+    return {v}
 
 def create_singleton_env(fv):
     """ Initial typing environnment maps each variable to the corresponding
