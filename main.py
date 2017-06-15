@@ -66,10 +66,16 @@ def main():
     Z = set()
     Xo = ov
     gamma, alpha, V, Z  = typing_os.typecheck(gamma, alpha, V, Z, Xo, prog)
-    print('* final gamma:', gamma);
-    print('* final alpha:', alpha);
-    print('* final V:', V);
-    print('* final Z:', Z);
+    print('* final gamma:', gamma)
+    print('* final alpha:', alpha)
+    print('* final V:', V)
+    print('* final Z:', Z)
+    has_return_var = prog[2]
+    if not has_return_var: 
+        print('--- sanity check: if no leaked variables, gammas should coincide')
+        ok = gamma == new_gamma
+        print("OK" if ok else "Not OK")
+
 
 if __name__ == "__main__":
     main()

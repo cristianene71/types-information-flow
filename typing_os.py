@@ -28,6 +28,7 @@ def _subst(gamma, alpha, Xo, x):
 
 def _subst_if_aux(ty, gamma, alpha, Xo, U):
     for x in U:
+        assert(x in Xo) 
         go = gamma[x]
         ao = alpha[x]
         assert(go == {lat_types.compl(x)}) # TODO(Phil) why keep x -> {compl(x)} in Gamma if it's constant anyway?
@@ -44,12 +45,20 @@ def _subst_if(ty, gamma, alpha, Xo, U):
           l = 2;
         }
     """
-    old_ty = lat_types.bottom
-    ty = _subst_if_aux(ty, gamma, alpha, Xo, U)
-    while ty != old_ty:
-        old_ty = ty
-        ty = _subst_if_aux(ty, gamma, alpha, Xo, U)
+    new_ty = ty
+    while True:
+        ty = new_ty
+        new_ty = _subst_if_aux(new_ty, gamma, alpha, Xo, U)
+        if new_ty == ty:
+            break
     return ty
+        
+    # old_ty = lat_types.bottom
+    # ty = _subst_if_aux(ty, gamma, alpha, Xo, U)
+    # while ty != old_ty:
+    #     old_ty = ty
+    #     ty = _subst_if_aux(ty, gamma, alpha, Xo, U)
+    # return ty
 
 def _compute_types_block(gamma, alpha, V, Z, Xo, b):
     assert(b[0] == 'BLOCK')
@@ -103,16 +112,42 @@ def _compute_types_stm(gamma, alpha, V, Z, Xo, s):
         ty = lat_types.join_list([gamma[y] for y in fv_expr])
         p = _subst_if(ty, gamma, alpha, Xo, U0)
 
-        print('IF p =', p)
-        new_gamma = { y : join(gamma[y], p) if y in U0 else gamma[y] for y in gamma}
-        new_alpha = { y : join(alpha[y], p) if y in W0 else alpha[y] for y in alpha}
+        # print('DEBUG IF p =', p)
+        new_alpha = { y : lat_types.join(alpha0[y], p) if y in U0 else alpha0[y] for y in alpha0}
+        new_gamma = { y : lat_types.join(gamma0[y], p) if y in W0 else gamma0[y] for y in gamma0}
 
         res = new_gamma, new_alpha, V.union(U0), Z.union(W0)
     elif tag == 'WHILE':
         expr = s[1]
-        code = s[2]
-        print("not yet implemented")
-        assert(False)
+        block = s[2]
+
+        gamma_init = gamma
+        alpha_init = alpha
+
+        new_alpha = alpha
+        new_gamma = gamma
+
+        while True:
+            alpha = new_alpha
+            gamma = new_gamma
+
+            gamma0, alpha0, U0, W0 = _compute_types_block(gamma, alpha, set(), set(), Xo, block)
+
+            fv_expr = free_vars.free_vars_exp(expr)
+            ty = lat_types.join_list([gamma_init[y] for y in fv_expr])
+            p = _subst_if(ty, gamma_init, alpha_init, Xo, U0)
+
+            # print('DEBUG WHILE p =', p)
+            new_alpha = { y : lat_types.join(alpha0[y], p) if y in U0 else alpha0[y] for y in alpha0}
+            new_gamma = { y : lat_types.join(gamma0[y], p) if y in W0 else gamma0[y] for y in gamma0}
+
+            new_alpha = lat_types.join_env(new_alpha, alpha)
+            new_gamma = lat_types.join_env(new_gamma, gamma)
+
+            if new_alpha == alpha and new_gamma == gamma:
+                break
+
+        res = new_gamma, new_alpha, V.union(U0), Z.union(W0)
     else:
         print("don't know tag", tag, s)    
         assert(False)
