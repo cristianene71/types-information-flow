@@ -15,10 +15,7 @@ import typing_os
 import pretty_print
 import free_vars
 import lat_types
-
-def _usage():
-    print('usage: ./main.py file')
-    exit(1)
+import argparse
 
 def main():
     """ entry point to the interpreter.
@@ -26,31 +23,45 @@ def main():
     Check arguments and run the different steps.
     parsing, printing, free variables calculation and typechecking.
     """
-    if len(sys.argv) != 2:
-        _usage()
+    arg_parser = argparse.ArgumentParser(description = 
+        'Information-flow typechecker for a simple imperative language.')
+    arg_parser.add_argument("file", metavar="FILE", help="file to be processed", 
+      nargs=1)
+    arg_parser.add_argument("-v", dest='verbose', action='store_true', 
+      help='verbose mode. Print debug information')
+    args = arg_parser.parse_args()
+    verbose = args.verbose
 
-    filename = sys.argv[1]
+    filename = args.file[0]
 
+    # TODO(Phil) handle exception
     with open(filename, 'r') as myfile:
         input_program = myfile.read()
 
-    print("--- parsing", filename)
+    if verbose:
+        print("--- parsing", filename)
+
     prog = parser.parser().parse(input_program)
+    fv = free_vars.free_vars_prog(prog)
 
-    print("--- pretty print")
-    pretty_print.print_prog(prog)
+    if verbose:
+        print("--- pretty print")
+        pretty_print.print_prog(prog)
 
-    print("--- free and output variable")
     fv = free_vars.free_vars_prog(prog)
     ov = free_vars.output_vars_prog(prog)
-    print('free', fv)
-    print('output', ov)
+
+    if verbose:
+        print("--- free and output variable")
+        print('free', fv)
+        print('output', ov)
 
     gamma = lat_types.create_singleton_env(fv)
 
     print('--- typechecking (hunt-sand)')
     if ov:
         print('WARNING: output variables are ignored')
+        
     print('* initial environment:', gamma)
 
     new_gamma = typing.typecheck(gamma, prog)

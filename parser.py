@@ -83,7 +83,7 @@ lexer = lex.lex()
 
 # Parsing rules
 
-precedence = (('right', 'WHILE'), ('right', 'IF'))
+precedence = (('left', 'EQUAL'), ('left', 'PLUS'), ('left', 'TIMES'))
 names = {}
 
 def p_prog(p):

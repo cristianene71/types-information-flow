@@ -1,6 +1,6 @@
 # Typing for information flow 
 
-Implementation of the type system defined in "On Flow-Sensitive Security Types" (S.Hunt and D.Sands) in python3.
+*Very preliminary* implementation of the type system defined in "On Flow-Sensitive Security Types" (S.Hunt and D.Sands) in python3. The code should be straighforward to understand, it follows the algorithmic typing rules from the paper.
 
 ### Usage
 
@@ -12,13 +12,15 @@ Then:
 
     python3 main.py file
 
-or (you may need to change the path to python3 on the fisrt line): 
+or (you may need to change the path to python3 on the first line): 
 
     ./main.py file
 
 To run all tests:
 
     ./run-tests.sh
+
+See options with `./main.py -h`
 
 ### Langage
 
@@ -30,7 +32,7 @@ We use the lattice of finite sets of variables extended with a 'top' element. Th
 
 ### Examples
 
-    > ./main.py tests/if_then2.w 
+    > ./main.py -v tests/if_then2.w 
     --- parsing tests/if_then2.w
     --- pretty print
     if ((x==1)) {
@@ -43,13 +45,4 @@ We use the lattice of finite sets of variables extended with a 'top' element. Th
     --- typechecking
     initial environment: {'y': {'y'}, 'x': {'x'}}
     final environment: {'y': {'y', 'x'}, 'x': {'x'}}
-
-### TODO
-
-* enforce python coding guidelines
-* add precedence/associativity rules in the grammar
-* expand this README 
-* add more tests
-
-
 
