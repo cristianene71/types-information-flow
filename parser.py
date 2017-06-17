@@ -38,7 +38,7 @@ reserved = {'while':'WHILE', 'if':'IF', 'else':'ELSE',
             'skip' :'SKIP' } 
 
 tokens = ['INT', 'EQUAL', 'PLUS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE',
-          'AFFECT', 'IDENT', 'COL', 'SCOL',  'TIMES'] + list(reserved.values())
+          'AFFECT', 'IDENT', 'SCOL',  'TIMES'] + list(reserved.values())
 
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
@@ -49,7 +49,6 @@ t_TIMES = r'\*'
 t_AFFECT = r'='
 t_EQUAL = r'=='
 t_SCOL = r'\;'
-t_COL = r':'
 
 def t_INT(t):
     r'\d+'
@@ -77,7 +76,7 @@ lexer = lex.lex()
 
 # Parsing rules
 
-precedence = (('right', 'WHILE'), ('right', 'IF'))
+precedence = (('left', 'EQUAL'), ('left', 'PLUS'), ('left', 'TIMES'))
 names = {}
 
 def p_prog(p):
