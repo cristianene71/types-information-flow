@@ -15,6 +15,7 @@ import pretty_print
 import free_vars
 import lat_types
 import argparse
+import cfg
 
 def main():
     """ entry point to the interpreter.
@@ -28,19 +29,28 @@ def main():
       nargs=1)
     arg_parser.add_argument("-v", dest='verbose', action='store_true', 
       help='verbose mode. Print debug information')
+    arg_parser.add_argument("-g", dest='graph', action='store_true', 
+      help='Control flow graph. Generate control flow graph')
     args = arg_parser.parse_args()
     verbose = args.verbose
+    graph = args.graph
 
     filename = args.file[0]
 
     # TODO(Phil) handle exception
     with open(filename, 'r') as myfile:
         input_program = myfile.read()
-
     if verbose:
         print("--- parsing", filename)
 
     prog = parser.parser().parse(input_program)
+
+    if graph:
+        print("--- control flow graph")
+        g = cfg.make_cfg(prog)
+        print(g)
+        exit(0)
+
     fv = free_vars.free_vars_prog(prog)
 
     if verbose:
