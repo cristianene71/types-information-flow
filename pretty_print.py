@@ -32,6 +32,15 @@ def _stm_to_string(p, indent):
         assert(False)
     return res
 
+def simple_stm_or_expr_to_string(p):
+    if p[0] in {'INT', 'IDENT', 'BINOP'}:
+        return _exp_to_string(p)
+    elif p[0] in {'AFFECT', 'SKIP'}:
+        return _stm_to_string(p, "")
+    else:
+        assert(False)
+
+
 def _block_to_string(b, indent):
     assert(b[0] == 'BLOCK')
     res = ""
