@@ -11,7 +11,7 @@ import os
 import sys
 import parser
 import typing
-import pretty_print
+import ast
 import free_vars
 import lat_types
 import argparse
@@ -71,7 +71,7 @@ def main():
 
     if verbose:
         print("--- pretty print")
-        pretty_print.print_prog(prog)
+        ast.print_prog(prog)
 
     if verbose:
         print('--- typechecking')

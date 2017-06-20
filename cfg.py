@@ -1,4 +1,4 @@
-import pretty_print
+import ast
 import free_vars
 
 def gen_name():
@@ -29,7 +29,7 @@ class Node:
 
   def set_code(self, code):
     self.code = code 
-    if pretty_print.is_expr(code):
+    if ast.is_expr(code):
       self.uses = list(free_vars.free_vars_exp(code))
     elif code[0] == 'AFFECT':
       self.defs = [code[1]]
@@ -87,7 +87,7 @@ def print_dot(nodes, os):
       name = n.name
       defs = str(n.defs)
       uses = str(n.uses) 
-      code = pretty_print.simple_stm_or_expr_to_string(n.code)
+      code = ast.simple_stm_or_expr_to_string(n.code)
       os.write('\t' + name + '[ label = "' + code + '\n def = ' + defs + '\n use = ' + uses + '\n"' + "]\n")
   for n in nodes:
       for s in n.succ:
