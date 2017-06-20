@@ -1,11 +1,19 @@
-o1 = h1;
-o2 = h2;
-
-if (o1 + o2) {
-    x = l1;
-    o1 = h3;
-    y = l2;
+u = 1;
+u = 4;
+if (x == 1) {
+    if (u == 1) {
+        skip;
+    } else {
+        skip;
+    } 
 } else {
-    skip;
+        skip;
+        if (u == 1) {
+            skip;
+        } else {
+            skip;
+        }
+        skip;
 }
-return o1, o2;
+x = 1;
+y = 3;

@@ -17,7 +17,7 @@ def free_vars_exp(e):
         assert(False)
     return res
 
-def _free_vars_stm(p):
+def free_vars_stm(p):
     tag = p[0]
     if tag == 'ASSIGN':
         res = free_vars_exp(p[2]).union(set([p[1]]))
@@ -37,7 +37,7 @@ def _free_vars_block(b):
     assert(b[0] == 'BLOCK')
     res = set()
     for s in b[1]:
-        res = res.union(_free_vars_stm(s))
+        res = res.union(free_vars_stm(s))
     return res
 
 def free_vars_prog(p):
@@ -47,5 +47,3 @@ def free_vars_prog(p):
 def output_vars_prog(p):
     assert(p[0] == 'PROG')
     return set(p[2])
-
-

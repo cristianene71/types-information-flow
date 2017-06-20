@@ -4,3 +4,5 @@ parsetab.py
 imperative-interpreter.sublime-project   
 imperative-interpreter.sublime-workspace
 README.html
+tests/*.dot
+tests/*.png

@@ -12,10 +12,11 @@ import sys
 import parser
 import typing
 import typing_os
-import pretty_print
+import ast
 import free_vars
 import lat_types
 import argparse
+import cfg
 
 def main():
     """ entry point to the interpreter.
@@ -27,10 +28,20 @@ def main():
         'Information-flow typechecker for a simple imperative language.')
     arg_parser.add_argument("file", metavar="FILE", help="file to be processed", 
       nargs=1)
+    arg_parser.add_argument("-o", dest='target', 
+        help="specify target dot file. To be used with -g option", nargs=1)
     arg_parser.add_argument("-v", dest='verbose', action='store_true', 
       help='verbose mode. Print debug information')
+    arg_parser.add_argument("-g", dest='graph', action='store_true', 
+      help='Control flow graph. Generate control flow graph')
     args = arg_parser.parse_args()
+
     verbose = args.verbose
+    graph = args.graph
+    target = args.target
+
+    if target and not graph:
+        print('target file ignored, to be used with -g option')
 
     filename = args.file[0]
 
@@ -42,11 +53,26 @@ def main():
         print("--- parsing", filename)
 
     prog = parser.parser().parse(input_program)
+
+    if graph:
+        g = cfg.make_cfg(prog)
+
+        # TODO(phil) rewrite this and handle exception
+        if not target:
+            # no output specified, use stdout
+            cfg.print_dot(g, sys.stdout)
+        else:
+            with open(target[0], 'w') as myfile:
+                cfg.print_dot(g, myfile)
+            myfile.close()
+
+        exit(0)
+
     fv = free_vars.free_vars_prog(prog)
 
     if verbose:
         print("--- pretty print")
-        pretty_print.print_prog(prog)
+        ast.print_prog(prog)
 
     fv = free_vars.free_vars_prog(prog)
     ov = free_vars.output_vars_prog(prog)
