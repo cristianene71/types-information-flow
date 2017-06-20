@@ -1,4 +1,5 @@
 import pretty_print
+import free_vars
 
 def gen_name():
     for x in "abcdefghijklmnopqrstuvwxyz":
@@ -14,39 +15,30 @@ gen_name = gen_name()
 nodes = []   # initially empty set of nodes, put in a static field of nodes ?
 
 class Node:
-  # TODO(phil): check if this is the right way to implement such a class
+  # TODO(phil) see how (and why) to use annotations like at_property
 
   def __init__(self):
+    # TODO(Phil) check if there is a better way to define a static field
     global nodes
     self.name = next(gen_name)
     self.code = None
     self.succ = []
-    self.pred = []
+    self.defs = []
+    self.uses = []
     nodes = nodes + [self]
-
-  def name(self):
-    return self.name
-
-  def code(self):
-    return self.code 
-
-  def succ(self):
-    return self.code 
-
-  def pred(self):
-    return self.code 
 
   def set_code(self, code):
     self.code = code 
-
-  def add_inst(self, inst):
-    self.code = self.code + [inst]
+    if pretty_print.is_expr(code):
+      self.uses = list(free_vars.free_vars_exp(code))
+    elif code[0] == 'AFFECT':
+      self.defs = [code[1]]
+      self.uses = list(free_vars.free_vars_exp(code[2]))
+    else:
+      assert(code[0] == 'SKIP')
 
   def add_succ(self, n):
     self.succ = self.succ + [n]
-
-  def add_pred(self, n):
-    self.pred = self.pred + [n]
 
 def make_cfg_block(b, initial_node, exit_node):
   assert(b[0] == 'BLOCK')
@@ -92,7 +84,11 @@ def print_dot(nodes, os):
   os.write('digraph cfg {\n')
   for n in nodes:
     if n.code:
-      os.write('\t' + n.name + '[ label = "' + pretty_print.simple_stm_or_expr_to_string(n.code) + '"]\n')
+      name = n.name
+      defs = str(n.defs)
+      uses = str(n.uses) 
+      code = pretty_print.simple_stm_or_expr_to_string(n.code)
+      os.write('\t' + name + '[ label = "' + code + '\n def = ' + defs + '\n use = ' + uses + '\n"' + "]\n")
   for n in nodes:
       for s in n.succ:
         os.write('\t' + n.name + '->' + s.name + ';\n')

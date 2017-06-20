@@ -2,7 +2,15 @@
     Simple recursive functions following the abstract syntax grammar.
 """
 
+#TODO(Phil) -> rename this package AST
+
 import sys
+
+def is_expr(p):
+    return p[0] in {'INT', 'IDENT', 'BINOP'}
+
+def is_simple_stm(p):
+    return p[0] in {'AFFECT', 'SKIP'}
 
 def _exp_to_string(e):
     tag = e[0]
@@ -33,13 +41,12 @@ def _stm_to_string(p, indent):
     return res
 
 def simple_stm_or_expr_to_string(p):
-    if p[0] in {'INT', 'IDENT', 'BINOP'}:
+    if is_expr(p):
         return _exp_to_string(p)
-    elif p[0] in {'AFFECT', 'SKIP'}:
+    elif is_simple_stm(p):
         return _stm_to_string(p, "")
     else:
         assert(False)
-
 
 def _block_to_string(b, indent):
     assert(b[0] == 'BLOCK')
