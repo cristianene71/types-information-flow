@@ -35,7 +35,7 @@ def _free_vars_block(b):
     assert(b[0] == 'BLOCK')
     res = set()
     for s in b[1]:
-        res = res.union(_free_vars_stm(s))
+        res = res.union(free_vars_stm(s))
     return res
 
 def free_vars_prog(p):
