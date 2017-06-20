@@ -1,5 +1,5 @@
-""" Typechecking
-    Follow the algorithmic rule of the paper
+""" Typechecking "output-sensitive"
+    Generalization of Hunt-Sands typechecker (ongoing work).
 """
 
 import lat_types
@@ -44,6 +44,7 @@ def _subst_if(ty, gamma, alpha, Xo, U):
         } else {
           l = 2;
         }
+        ... TODO(phil) complete this comment
     """
     new_ty = ty
     while True:
@@ -52,13 +53,6 @@ def _subst_if(ty, gamma, alpha, Xo, U):
         if new_ty == ty:
             break
     return ty
-        
-    # old_ty = lat_types.bottom
-    # ty = _subst_if_aux(ty, gamma, alpha, Xo, U)
-    # while ty != old_ty:
-    #     old_ty = ty
-    #     ty = _subst_if_aux(ty, gamma, alpha, Xo, U)
-    # return ty
 
 def _compute_types_block(gamma, alpha, V, Z, Xo, b):
     assert(b[0] == 'BLOCK')
@@ -168,10 +162,8 @@ def typecheck(gamma, alpha, V, Z, Xo, prog):
     of leaked variables. 
 
     Output variables are mapped to the `complement` singleton. 
-    TODO(phil) why keep this in gamma since it's fixed.
 
-    alpha (dict): typing environment for output variables. TODO(phil) why
-    not use one typing environment for everything.
+    alpha (dict): typing environment for output variables. 
 
     V (set): set of output variables. 
 

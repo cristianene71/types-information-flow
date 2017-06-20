@@ -2,8 +2,6 @@
     Simple recursive functions following the abstract syntax grammar.
 """
 
-#TODO(Phil) -> rename this package AST
-
 import sys
 
 def is_expr(p):
