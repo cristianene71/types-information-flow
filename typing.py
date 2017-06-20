@@ -26,7 +26,7 @@ def _compute_types_stm(gamma, p, s):
     tag = s[0]
     if tag == 'SKIP':
         res = gamma 
-    elif tag == 'AFFECT':
+    elif tag == 'ASSIGN':
         var = s[1]
         expr = s[2]
         t = _compute_expr_type(gamma, expr)

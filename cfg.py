@@ -31,7 +31,7 @@ class Node:
     self.code = code 
     if ast.is_expr(code):
       self.uses = list(free_vars.free_vars_exp(code))
-    elif code[0] == 'AFFECT':
+    elif code[0] == 'ASSIGN':
       self.defs = [code[1]]
       self.uses = list(free_vars.free_vars_exp(code[2]))
     else:
@@ -43,7 +43,7 @@ class Node:
 def make_cfg_block(b, initial_node, exit_node):
   assert(b[0] == 'BLOCK')
   for i in b[1]:
-    if i[0] in {'SKIP', 'AFFECT'}:
+    if i[0] in {'SKIP', 'ASSIGN'}:
       simple_instr_node = Node()
       simple_instr_node.set_code(i)
       initial_node.add_succ(simple_instr_node)

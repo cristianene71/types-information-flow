@@ -5,7 +5,7 @@ Concrete syntax is given by the following grammar.
     prog ::= block
     block ::= stm block
     block ::= stm
-    stm ::= IDENT AFFECT exp SCOL
+    stm ::= IDENT ASSIGN exp SCOL
     stm ::= WHILE LPAREN exp RPAREN LBRACE block RBRACE
     stm ::= IF LPAREN exp RPAREN LBRACE block RBRACE ELSE LBRACE block RBRACE
     stm ::= SKIP SCOL
@@ -22,7 +22,7 @@ PROG ::= ('PROG', BLOCK)
 BLOCK ::= [ STM, ..., STM ]
 STM ::= ('IF', EXP, BLOCK, BLOCK)
      |  ('WHILE', EXP, EXP)
-     |  ('AFFECT', IDENT, EXP)
+     |  ('ASSIGN', IDENT, EXP)
      |  ('SKIP' , None)
 EXP ::= ('INT', INT)
      |  ('IDENT', IDENT)
@@ -38,7 +38,7 @@ reserved = {'while':'WHILE', 'if':'IF', 'else':'ELSE',
             'skip' :'SKIP' } 
 
 tokens = ['INT', 'EQUAL', 'PLUS', 'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE',
-          'AFFECT', 'IDENT', 'SCOL',  'TIMES'] + list(reserved.values())
+          'ASSIGN', 'IDENT', 'SCOL',  'TIMES'] + list(reserved.values())
 
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
@@ -46,7 +46,7 @@ t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_PLUS = r'\+'
 t_TIMES = r'\*'
-t_AFFECT = r'='
+t_ASSIGN = r'='
 t_EQUAL = r'=='
 t_SCOL = r'\;'
 
@@ -91,9 +91,9 @@ def p_block_base(p):
     'block : stm'
     p[0] = ('BLOCK', [p[1]]) 
 
-def p_stm_affect(p):
-    'stm : IDENT AFFECT exp SCOL'
-    p[0] = ('AFFECT', p[1], p[3])
+def p_stm_assign(p):
+    'stm : IDENT ASSIGN exp SCOL'
+    p[0] = ('ASSIGN', p[1], p[3])
 
 def p_stm_while(p):
     'stm : WHILE LPAREN exp RPAREN LBRACE block RBRACE'

@@ -17,7 +17,7 @@ def free_vars_exp(e):
 
 def free_vars_stm(p):
     tag = p[0]
-    if tag == 'AFFECT':
+    if tag == 'ASSIGN':
         res = free_vars_exp(p[2]).union(set([p[1]]))
     elif tag == 'WHILE':
         res = free_vars_exp(p[1]).union(_free_vars_block(p[2]))
