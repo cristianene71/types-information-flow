@@ -42,7 +42,7 @@ class Node:
     defs = str(self.defs)
     uses = str(self.uses) 
     code = ast.simple_stm_or_expr_to_string(self.code)
-    dot_str = self.name + '[ label = "' + code + '\n def = ' + defs + '\n use = ' + uses + '\n"' + "]\n"
+    dot_str = self.name + '[ label = "' + self.name + '\n' + code + '\n def = ' + defs + '\n use = ' + uses + '\n"' + "]\n"
     return dot_str
 
 def make_cfg_block(b, initial_node, exit_node):

@@ -17,6 +17,7 @@ import free_vars
 import lat_types
 import argparse
 import cfg
+import dataflowanalysis
 
 def main():
     """ entry point to the interpreter.
@@ -65,6 +66,11 @@ def main():
             with open(target[0], 'w') as myfile:
                 cfg.print_dot(g, myfile)
             myfile.close()
+
+        eqns = dataflowanalysis.gen_equations(g)
+        dataflowanalysis.print_equations(eqns)
+        sol = dataflowanalysis.solve_equations(eqns)
+        dataflowanalysis.print_sol(sol)
 
         exit(0)
 
