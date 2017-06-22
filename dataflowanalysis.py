@@ -54,3 +54,11 @@ def solve_equations(equations):
     if (old_sol == current_sol):
       break
   return current_sol
+
+def check_var_not_used(g, sol):
+  for n in g:
+    future_use = sol[out_var(n.name)]
+    for i in n.defs:
+      if i not in future_use:
+        print('WARNING variable', i, 'in block', n.name, 'defined but not used')
+

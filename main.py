@@ -71,6 +71,7 @@ def main():
         dataflowanalysis.print_equations(eqns)
         sol = dataflowanalysis.solve_equations(eqns)
         dataflowanalysis.print_sol(sol)
+        dataflowanalysis.check_var_not_used(g, sol)
 
         exit(0)
 
