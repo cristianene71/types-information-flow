@@ -67,9 +67,7 @@ def main():
                 cfg.print_dot(g, myfile)
             myfile.close()
 
-        eqns = dataflowanalysis.gen_equations(g)
-        dataflowanalysis.print_equations(eqns)
-        sol = dataflowanalysis.solve_equations(eqns)
+        sol = dataflowanalysis.compute_liveness(g)
         dataflowanalysis.print_sol(sol)
         dataflowanalysis.check_var_not_used(g, sol)
 

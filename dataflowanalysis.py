@@ -1,64 +1,41 @@
-""" Generate, print and solve dataflow equations. To each node 'n'
- we associate a variable 'Xn_out' that represents the set of variables
- used after exiting this node.
+""" Solve liveness equations.
 """
 
-def in_var(x):
-  return x + '_in'
-
-def out_var(x):
-  return 'X' + x + '_out'
-
-def print_equations(equations):
-  print('--- equations')
-  for var in equations:
-    use, succ = equations[var]
-    succ_names = " U ".join(succ)
-    if succ_names:
-      if use:
-        print(var, '=', set(use), 'U', succ_names)
-      else:
-        print(var, '=', succ_names)
-    else:
-      if use:
-        print(var, '=', set(use))
-      else:
-        print(var, '= {}')
+def _live_out_var(x):
+  """ Generate variable name from node name 
+  Only used for display purpose.
+  """
+  return 'LIVE_' + x + '_out'
 
 def print_sol(sol):
   print('--- solution')
   for x in sol:
-    print(x, '=', sol[x] if sol[x] else '{}') 
+    print(_live_out_var(x), '=', sol[x] if sol[x] else '{}') 
 
-def gen_equations(nodes):
-  res = {}
-  for n in nodes:
-    succ_names = [out_var(x.name) for x in n.succ]
-    res[out_var(n.name)] = (n.uses, succ_names)
-  return res
+def _apply_liveness_equations(graph, current_sol):
+  """ apply liveness equations (from the graph) to a current solution """
+  for node in graph:
+    res = set()
+    for succ in node.succ:
+      res = res.union(set(succ.uses).union(current_sol[succ.name]).difference(succ.defs))
+    current_sol[node.name] = res
 
-def apply_equations(equations, current_sol):
-  for x in current_sol:
-    use, succs = equations[x]
-    cur_x = current_sol[x]
-    cur_x = cur_x.union(use)
-    for y in succs:
-      cur_x = cur_x.union(current_sol[y])
-    current_sol[x] = cur_x
-
-def solve_equations(equations):
-  current_sol = { x : set() for x in equations }
+def compute_liveness(g):
+  """ apply liveness equations until a fixpoint is reached """
+  current_sol = { n.name : set() for n in g }
   while True:
     old_sol = current_sol.copy()
-    apply_equations(equations, current_sol)
-    if (old_sol == current_sol):
-      break
+    _apply_liveness_equations(g, current_sol)
+    if old_sol == current_sol:
+       break
   return current_sol
 
 def check_var_not_used(g, sol):
+  """ generate warning for variables defined at a node that are not 'live-out'
+  """
   for n in g:
-    future_use = sol[out_var(n.name)]
+    live_out = sol[n.name]
     for i in n.defs:
-      if i not in future_use:
+      if i not in live_out:
         print('WARNING variable', i, 'in block', n.name, 'defined but not used')
 
