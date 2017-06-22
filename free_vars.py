@@ -1,5 +1,5 @@
-""" Compute the set of free variables and output variables (returned variables) 
-    of a program. 
+""" Compute the set of free variables, assigned variables and output variables
+    of a program.
 
     Simple recursive functions over the AST
 """
@@ -47,3 +47,29 @@ def free_vars_prog(p):
 def output_vars_prog(p):
     assert(p[0] == 'PROG')
     return set(p[2])
+
+def assigned_vars_stm(p):
+    tag = p[0]
+    if tag == 'ASSIGN':
+        res = set([p[1]])
+    elif tag == 'WHILE':
+        res = assigned_vars_block(p[2])
+    elif tag == 'IF':
+        res = assigned_vars_block(p[2]).union(assigned_vars_block(p[3]))
+    elif tag == 'SKIP':
+        res = set()
+    else:
+        print("don't know tag", tag, p)
+        assert(False)
+    return res
+
+def assigned_vars_block(b):
+    assert(b[0] == 'BLOCK')
+    res = set()
+    for s in b[1]:
+        res = res.union(assigned_vars_stm(s))
+    return res
+
+def assigned_vars_prog(p):
+    assert(p[0] == 'PROG')
+    return assigned_vars_block(p[1])

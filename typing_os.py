@@ -19,8 +19,7 @@ def _subst(gamma, alpha, Xo, x):
         it still depends on 'y' 
     """
     assert(x in Xo)
-    go = gamma[x]
-    assert(go == {lat_types.compl(x)}) # TODO(phil) why keep x -> {compl(x)} in Gamma if it's constant anyway?
+    go = {lat_types.compl(x)} 
     ao = alpha[x]
     new_gamma = { y : lat_types.subst(gamma[y], go, ao) if y not in Xo else gamma[y] for y in gamma}
     new_alpha = { y : lat_types.subst(alpha[y], go, ao) for y in alpha}
@@ -29,9 +28,8 @@ def _subst(gamma, alpha, Xo, x):
 def _subst_if_aux(ty, gamma, alpha, Xo, U):
     for x in U:
         assert(x in Xo) 
-        go = gamma[x]
         ao = alpha[x]
-        assert(go == {lat_types.compl(x)}) # TODO(Phil) why keep x -> {compl(x)} in Gamma if it's constant anyway?
+        go = {lat_types.compl(x)}
         ty = lat_types.subst(ty, go, ao)
     return ty
 
@@ -54,16 +52,16 @@ def _subst_if(ty, gamma, alpha, Xo, U):
             break
     return ty
 
-def _compute_types_block(gamma, alpha, V, Z, Xo, b):
+def _compute_types_block(gamma, alpha, Xo, b):
     assert(b[0] == 'BLOCK')
     for stm in b[1]:
-        gamma, alpha, V, Z = _compute_types_stm(gamma, alpha, V, Z, Xo, stm)
-    return gamma, alpha, V, Z
+        gamma, alpha = _compute_types_stm(gamma, alpha, Xo, stm)
+    return gamma, alpha
 
-def _compute_types_stm(gamma, alpha, V, Z, Xo, s):
+def _compute_types_stm(gamma, alpha, Xo, s):
     tag = s[0]
     if tag == 'SKIP':
-        res = gamma, alpha, V, Z
+        res = gamma, alpha
     elif tag == 'ASSIGN':
         # x := expr
         x = s[1]
@@ -74,7 +72,7 @@ def _compute_types_stm(gamma, alpha, V, Z, Xo, s):
             gamma_new = gamma.copy()
             ty = lat_types.join_list([gamma[y] for y in fv_expr])
             gamma_new[x] = ty
-            res = gamma_new, alpha, V, Z.union({x})
+            res = gamma_new, alpha
         else:
             gamma1, alpha1 = _subst(gamma, alpha, Xo, x)  
 
@@ -87,30 +85,31 @@ def _compute_types_stm(gamma, alpha, V, Z, Xo, s):
                 ty = lat_types.join_list([gamma1[y] for y in fv_expr])
 
             alpha1[x] = ty
-            res = gamma1, alpha1, V.union({x}), Z
+            res = gamma1, alpha1
     elif tag == 'IF':
         expr = s[1]
         if_block = s[2]
         else_block = s[3]
 
-        gamma1, alpha1, U1, W1 = _compute_types_block(gamma, alpha, set(), set(), Xo, if_block)
-        gamma2, alpha2, U2, W2 = _compute_types_block(gamma, alpha, set(), set(), Xo, else_block)
+        gamma1, alpha1 = _compute_types_block(gamma, alpha, Xo, if_block)
+        gamma2, alpha2 = _compute_types_block(gamma, alpha, Xo, else_block)
 
         gamma0 = lat_types.join_env(gamma1, gamma2) 
         alpha0 = lat_types.join_env(alpha1, alpha2) 
-
-        U0 = U1.union(U2)
-        W0 = W1.union(W2)
+        
+        assigned = free_vars.assigned_vars_stm(s)
+        ass_output = assigned.intersection(Xo)
+        ass_input = assigned.difference(ass_output)
 
         fv_expr = free_vars.free_vars_exp(expr)
         ty = lat_types.join_list([gamma[y] for y in fv_expr])
-        p = _subst_if(ty, gamma, alpha, Xo, U0)
+        p = _subst_if(ty, gamma, alpha, Xo, ass_output)
 
         # print('DEBUG IF p =', p)
-        new_alpha = { y : lat_types.join(alpha0[y], p) if y in U0 else alpha0[y] for y in alpha0}
-        new_gamma = { y : lat_types.join(gamma0[y], p) if y in W0 else gamma0[y] for y in gamma0}
+        new_alpha = { y : lat_types.join(alpha0[y], p) if y in ass_output else alpha0[y] for y in alpha0}
+        new_gamma = { y : lat_types.join(gamma0[y], p) if y in ass_input else gamma0[y] for y in gamma0}
 
-        res = new_gamma, new_alpha, V.union(U0), Z.union(W0)
+        res = new_gamma, new_alpha
     elif tag == 'WHILE':
         expr = s[1]
         block = s[2]
@@ -125,15 +124,20 @@ def _compute_types_stm(gamma, alpha, V, Z, Xo, s):
             alpha = new_alpha
             gamma = new_gamma
 
-            gamma0, alpha0, U0, W0 = _compute_types_block(gamma, alpha, set(), set(), Xo, block)
+            gamma0, alpha0 = _compute_types_block(gamma, alpha, Xo, block)
 
             fv_expr = free_vars.free_vars_exp(expr)
             ty = lat_types.join_list([gamma_init[y] for y in fv_expr])
-            p = _subst_if(ty, gamma_init, alpha_init, Xo, U0)
+
+            assigned = free_vars.assigned_vars_block(block) 
+            ass_output = assigned.intersection(Xo)
+            ass_input = assigned.difference(ass_output)
+
+            p = _subst_if(ty, gamma_init, alpha_init, Xo, ass_output)
 
             # print('DEBUG WHILE p =', p)
-            new_alpha = { y : lat_types.join(alpha0[y], p) if y in U0 else alpha0[y] for y in alpha0}
-            new_gamma = { y : lat_types.join(gamma0[y], p) if y in W0 else gamma0[y] for y in gamma0}
+            new_alpha = { y : lat_types.join(alpha0[y], p) if y in ass_output else alpha0[y] for y in alpha0}
+            new_gamma = { y : lat_types.join(gamma0[y], p) if y in ass_input else gamma0[y] for y in gamma0}
 
             new_alpha = lat_types.join_env(new_alpha, alpha)
             new_gamma = lat_types.join_env(new_gamma, gamma)
@@ -141,17 +145,17 @@ def _compute_types_stm(gamma, alpha, V, Z, Xo, s):
             if new_alpha == alpha and new_gamma == gamma:
                 break
 
-        res = new_gamma, new_alpha, V.union(U0), Z.union(W0)
+        res = new_gamma, new_alpha
     else:
         print("don't know tag", tag, s)    
         assert(False)
     return res
 
 
-def _compute_types_prog(gamma, alpha, V, Z, Xo, prog):
-    return _compute_types_block(gamma, alpha, V, Z, Xo, prog)
+def _compute_types_prog(gamma, alpha, Xo, prog):
+    return _compute_types_block(gamma, alpha, Xo, prog)
 
-def typecheck(gamma, alpha, V, Z, Xo, prog):
+def typecheck(gamma, alpha, Xo, prog):
     """
 
     Args: 
@@ -179,4 +183,4 @@ def typecheck(gamma, alpha, V, Z, Xo, prog):
     Z' is Z extended with leaked variables (potentially) assigned in prog.
     """
     assert(prog[0] == 'PROG')
-    return _compute_types_prog(gamma, alpha, V, Z, Xo, prog[1])
+    return _compute_types_prog(gamma, alpha, Xo, prog[1])
