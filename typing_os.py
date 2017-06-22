@@ -1,9 +1,21 @@
 """ Typechecking "output-sensitive"
     Generalization of Hunt-Sands typechecker (ongoing work).
 """
-
 import lat_types
 import free_vars
+
+def _fixpoint(f, x):
+    while True:
+        old_x = x
+        x = f(x)     
+        if old_x == x:
+            break
+    return x
+
+def _split(vars, output):
+    vars_output = vars.intersection(output)
+    vars_not_output = vars.difference(output)
+    return vars_output, vars_not_output
 
 def _subst(gamma, alpha, Xo, x):
     """ (Gamma, Alpha) <| x in the paper
@@ -25,14 +37,6 @@ def _subst(gamma, alpha, Xo, x):
     new_alpha = { y : lat_types.subst(alpha[y], go, ao) for y in alpha}
     return new_gamma, new_alpha
 
-def _subst_if_aux(ty, gamma, alpha, Xo, U):
-    for x in U:
-        assert(x in Xo) 
-        ao = alpha[x]
-        go = {lat_types.compl(x)}
-        ty = lat_types.subst(ty, go, ao)
-    return ty
-
 def _subst_if(ty, gamma, alpha, Xo, U):
     """ (ty, Gamma, Alpha) <| U) in the paper, used in If rule.
         U is a set of variables.
@@ -44,13 +48,17 @@ def _subst_if(ty, gamma, alpha, Xo, U):
         }
         ... TODO(phil) complete this comment
     """
-    new_ty = ty
-    while True:
-        ty = new_ty
-        new_ty = _subst_if_aux(new_ty, gamma, alpha, Xo, U)
-        if new_ty == ty:
-            break
-    return ty
+    def subst_if_aux(ty, gamma, alpha, Xo, U):
+        for x in U:
+            assert(x in Xo) 
+            ao = alpha[x]
+            go = {lat_types.compl(x)}
+            ty = lat_types.subst(ty, go, ao)
+        return ty
+
+    subst_if_fp = lambda ty : subst_if_aux(ty, gamma, alpha, Xo, U) 
+
+    return _fixpoint(subst_if_fp, ty)
 
 def _compute_types_block(gamma, alpha, Xo, b):
     assert(b[0] == 'BLOCK')
@@ -58,99 +66,89 @@ def _compute_types_block(gamma, alpha, Xo, b):
         gamma, alpha = _compute_types_stm(gamma, alpha, Xo, stm)
     return gamma, alpha
 
+def _type_of_expr(gamma, expr, x = None, y = None):
+    fv_expr = free_vars.free_vars_exp(expr)
+    if x:
+        ty = lat_types.join_list([gamma[y] for y in fv_expr if y != x])
+        ty = lat_types.join(ty, y)
+    else:
+        ty = lat_types.join_list([gamma[y] for y in fv_expr]) 
+    return ty
+
 def _compute_types_stm(gamma, alpha, Xo, s):
     tag = s[0]
     if tag == 'SKIP':
         res = gamma, alpha
     elif tag == 'ASSIGN':
-        # x := expr
         x = s[1]
         expr = s[2]
-        fv_expr = free_vars.free_vars_exp(expr)
+
         if not x in Xo:
             # Rule As1
             gamma_new = gamma.copy()
-            ty = lat_types.join_list([gamma[y] for y in fv_expr])
-            gamma_new[x] = ty
+            gamma_new[x] = _type_of_expr(gamma, expr)
             res = gamma_new, alpha
         else:
             gamma1, alpha1 = _subst(gamma, alpha, Xo, x)  
 
-            if x in fv_expr:
+            if x in free_vars.free_vars_exp(expr):
                 # Rule As3 
-                ty = lat_types.join_list([gamma1[y] for y in fv_expr if y != x])
-                ty = lat_types.join(ty, alpha[x])
+                ty = _type_of_expr(gamma1, expr, x, alpha[x])
             else:
                 # Rule As2
-                ty = lat_types.join_list([gamma1[y] for y in fv_expr])
+                ty = _type_of_expr(gamma1, expr)
 
             alpha1[x] = ty
             res = gamma1, alpha1
+
     elif tag == 'IF':
         expr = s[1]
         if_block = s[2]
         else_block = s[3]
+
+        assigned = free_vars.assigned_vars_stm(s)
+        assigned_output, assigned_input = _split(assigned, Xo)
 
         gamma1, alpha1 = _compute_types_block(gamma, alpha, Xo, if_block)
         gamma2, alpha2 = _compute_types_block(gamma, alpha, Xo, else_block)
 
         gamma0 = lat_types.join_env(gamma1, gamma2) 
         alpha0 = lat_types.join_env(alpha1, alpha2) 
-        
-        assigned = free_vars.assigned_vars_stm(s)
-        ass_output = assigned.intersection(Xo)
-        ass_input = assigned.difference(ass_output)
 
-        fv_expr = free_vars.free_vars_exp(expr)
-        ty = lat_types.join_list([gamma[y] for y in fv_expr])
-        p = _subst_if(ty, gamma, alpha, Xo, ass_output)
+        ty = _type_of_expr(gamma, expr)
+        p = _subst_if(ty, gamma, alpha, Xo, assigned_output)
 
-        # print('DEBUG IF p =', p)
-        new_alpha = { y : lat_types.join(alpha0[y], p) if y in ass_output else alpha0[y] for y in alpha0}
-        new_gamma = { y : lat_types.join(gamma0[y], p) if y in ass_input else gamma0[y] for y in gamma0}
+        alpha2 = { y : lat_types.join(alpha0[y], p) if y in assigned_output else alpha0[y] for y in alpha0}
+        gamma2 = { y : lat_types.join(gamma0[y], p) if y in assigned_input else gamma0[y] for y in gamma0}
 
-        res = new_gamma, new_alpha
+        res = gamma2, alpha2
+
     elif tag == 'WHILE':
         expr = s[1]
         block = s[2]
 
-        gamma_init = gamma
-        alpha_init = alpha
+        assigned = free_vars.assigned_vars_block(block) 
+        assigned_output, assigned_input = _split(assigned, Xo)
 
-        new_alpha = alpha
-        new_gamma = gamma
+        def while_fp(param):
+            g, a = param
+            g0, a0 = _compute_types_block(g, a, Xo, block)
+            ty = _type_of_expr(gamma, expr) 
 
-        while True:
-            alpha = new_alpha
-            gamma = new_gamma
+            p = _subst_if(ty, gamma, alpha, Xo, assigned_output)
 
-            gamma0, alpha0 = _compute_types_block(gamma, alpha, Xo, block)
+            g1 = { y : lat_types.join(g0[y], p) if y in assigned_input else g0[y] for y in g0}
+            a1 = { y : lat_types.join(a0[y], p) if y in assigned_output else a0[y] for y in a0}
 
-            fv_expr = free_vars.free_vars_exp(expr)
-            ty = lat_types.join_list([gamma_init[y] for y in fv_expr])
+            g1 = lat_types.join_env(g1, g)
+            a1 = lat_types.join_env(a1, a)
+            return g1, a1 
 
-            assigned = free_vars.assigned_vars_block(block) 
-            ass_output = assigned.intersection(Xo)
-            ass_input = assigned.difference(ass_output)
-
-            p = _subst_if(ty, gamma_init, alpha_init, Xo, ass_output)
-
-            # print('DEBUG WHILE p =', p)
-            new_alpha = { y : lat_types.join(alpha0[y], p) if y in ass_output else alpha0[y] for y in alpha0}
-            new_gamma = { y : lat_types.join(gamma0[y], p) if y in ass_input else gamma0[y] for y in gamma0}
-
-            new_alpha = lat_types.join_env(new_alpha, alpha)
-            new_gamma = lat_types.join_env(new_gamma, gamma)
-
-            if new_alpha == alpha and new_gamma == gamma:
-                break
-
-        res = new_gamma, new_alpha
+        res = _fixpoint(while_fp, (gamma, alpha))
     else:
         print("don't know tag", tag, s)    
         assert(False)
     return res
-
 
 def _compute_types_prog(gamma, alpha, Xo, prog):
     return _compute_types_block(gamma, alpha, Xo, prog)
