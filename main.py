@@ -84,8 +84,6 @@ def main():
         print("--- pretty print")
         ast.print_prog(prog)
 
-
-    if verbose:
         print("--- free and output variable")
         print('free', fv)
         print('output', Xo)
@@ -121,7 +119,9 @@ def main():
     print('--- sanity check')
 
     if Xo: 
-        gamma_alpha_os_no_output = lat_types.erase_output_env(lat_types.join_env(gamma_final_os, alpha_final_os))
+        gamma_no_output, alpha_no_output = typing_os.subst_all_output(gamma_final_os, alpha_final_os, Xo)
+        gamma_alpha_os_no_output = { x : gamma_no_output[x] for x in gamma_no_output if x not in Xo }
+        gamma_alpha_os_no_output.update(alpha_no_output)
         print('leaked variables: gamma_alpha_os_no_ouput == gamma_hs')
         if gamma_alpha_os_no_output == gamma_final_hs:
             print('OK')

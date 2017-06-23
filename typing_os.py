@@ -20,9 +20,10 @@ def _split(vars, output):
 def _subst(gamma, alpha, Xo, x):
     """ (Gamma, Alpha) <| x in the paper
         x is an output variable
-        substitutes all occurences of compl(x) in gamma and alpha with content of alpha[x]
-        (except in x -> {compl{x}} in Gamma that remains constant)
-        this is to update former dependencies to output variables in type environment
+        substitutes all occurences of compl(x) in gamma and alpha with content 
+        of alpha[x] (except in x -> {compl{x}} in Gamma that remains constant)
+        this is to update former dependencies to output variables in type 
+        environment
         For instance in:
           o = y; (1)
           x = o; (2)
@@ -59,6 +60,11 @@ def _subst_if(ty, gamma, alpha, Xo, U):
     subst_if_fp = lambda ty : subst_if_aux(ty, gamma, alpha, Xo, U) 
 
     return _fixpoint(subst_if_fp, ty)
+
+def subst_all_output(gamma, alpha, Xo):
+    for x in Xo:
+        gamma, alpha = _subst(gamma, alpha, Xo, x)
+    return gamma, alpha
 
 def _compute_types_block(gamma, alpha, Xo, b):
     assert(b[0] == 'BLOCK')
@@ -155,7 +161,6 @@ def _compute_types_prog(gamma, alpha, Xo, prog):
 
 def typecheck(gamma, alpha, Xo, prog):
     """
-
     Args: 
 
     gamma (dict): typing environment. See lat_typing.py for more
@@ -167,18 +172,13 @@ def typecheck(gamma, alpha, Xo, prog):
 
     alpha (dict): typing environment for output variables. 
 
-    V (set): set of output variables. 
-
-    Z (set): set of regular variables 
-
     Xo: set of output or 'leaked' variables. 
 
     prog (ast, see parser.py): Program to be typed 
 
-    Returns: (gamma', alpha', V', Z'). 
-    gamma, alpha, V, Z, define new typing environment after the execution of
-    prog. V' is V extended with regular variables (potentially) assigned in prog.
-    Z' is Z extended with leaked variables (potentially) assigned in prog.
+    Returns: (gamma, alpha). 
+    gamma, alpha, define new typing environment after the execution of
+    prog. 
     """
     assert(prog[0] == 'PROG')
     return _compute_types_prog(gamma, alpha, Xo, prog[1])
