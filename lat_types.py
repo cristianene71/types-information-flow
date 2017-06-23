@@ -83,3 +83,13 @@ def join_env(gamma1, gamma2):
         if not y in gamma1:
           res[y] = gamma2[y]
     return res
+
+def erase_output_type(ty):
+    return set([x for x in ty if x[0] != '_']) # TODO use a function is_compl_var()
+
+def erase_output_env(gamma):
+    """ erase all compl variables in types """
+    new_gamma = dict()
+    for x in gamma:
+        new_gamma[x] = erase_output_type(gamma[x])
+    return new_gamma

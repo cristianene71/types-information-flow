@@ -74,46 +74,69 @@ def main():
         exit(0)
 
     fv = free_vars.free_vars_prog(prog)
+    Xo = free_vars.output_vars_prog(prog)
+
+    if not set(Xo).issubset(set(fv)):
+        print('ERROR: returned vars must be included in free vars')
+        exit(1)
 
     if verbose:
         print("--- pretty print")
         ast.print_prog(prog)
 
-    fv = free_vars.free_vars_prog(prog)
-    ov = free_vars.output_vars_prog(prog)
 
     if verbose:
         print("--- free and output variable")
         print('free', fv)
-        print('output', ov)
+        print('output', Xo)
 
-    gamma = lat_types.create_singleton_env(fv)
+    gamma_init_hs = lat_types.create_singleton_env(fv)
 
-    print('--- typechecking (hunt-sand)')
-    if ov:
-        print('WARNING: output variables are ignored')
-        
-    print('* initial environment:', gamma)
+    if verbose:
+        print('--- typechecking (hunt-sand)')
+        if Xo:
+            print('WARNING: output variables are ignored')
+            
+        print('* initial environment:', gamma_init_hs)
 
-    new_gamma = typing.typecheck(gamma, prog)
-    print('* final environment:', new_gamma)
+    gamma_final_hs = typing.typecheck(gamma_init_hs, prog)
 
-    print('--- typechecking (output-sensitive)')
-    gamma = lat_types.create_singleton_env(fv)
-    gamma.update(lat_types.create_complement_env(ov))
-    alpha = lat_types.create_singleton_env(ov)
-    print('* initial gamma', gamma) 
-    print('* initial alpha', alpha) 
-    Xo = ov
-    gamma, alpha  = typing_os.typecheck(gamma, alpha, Xo, prog)
-    print('* final gamma:', gamma)
-    print('* final alpha:', alpha)
-    has_return_var = prog[2]
-    if not has_return_var: 
-        print('--- sanity check: if no leaked variables, gammas should coincide')
-        ok = gamma == new_gamma
-        print("OK" if ok else "Not OK")
+    if verbose:
+        print('* final environment:', gamma_final_hs)
+        print('--- typechecking (output-sensitive)')
 
+    gamma_init_os = lat_types.create_singleton_env(fv)
+    gamma_init_os.update(lat_types.create_complement_env(Xo))
+    alpha_init_os = lat_types.create_singleton_env(Xo)
+    if verbose:
+        print('* initial gamma', gamma_init_os) 
+        print('* initial alpha', alpha_init_os) 
+
+    gamma_final_os, alpha_final_os  = typing_os.typecheck(gamma_init_os, alpha_init_os, Xo, prog)
+
+    if verbose:
+        print('* final gamma:', gamma_final_os)
+        print('* final alpha:', alpha_final_os)
+
+    print('--- sanity check')
+
+    if Xo: 
+        gamma_alpha_os_no_output = lat_types.erase_output_env(lat_types.join_env(gamma_final_os, alpha_final_os))
+        print('leaked variables: gamma_alpha_os_no_ouput == gamma_hs')
+        if gamma_alpha_os_no_output == gamma_final_hs:
+            print('OK')
+        else:
+            print('NOT OK')
+            print('gamma_alpha_os_no_output', gamma_alpha_os_no_output)
+            print('gamma_final_hs', gamma_final_hs)
+    else:
+        print('no leaked variables: gamma_final_hs == gamma_final_os')
+        if gamma_final_os == gamma_final_hs:
+            print('OK') 
+        else:
+            print('NOT OK')
+            print('gamma_final_hs', gamma_final_hs)
+            print('gamma_final_os', gamma_final_os)
 
 if __name__ == "__main__":
     main()

@@ -1,2 +1,2 @@
 x = 1;
-return y;
+return x;
